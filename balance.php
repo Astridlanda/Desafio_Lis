@@ -12,10 +12,10 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // Obtener datos detallados de entradas y salidas
-$queryEntradas = $conn->query("SELECT tipo, monto, fecha, factura FROM entradas");
+$queryEntradas = $conn->query("SELECT tipo, monto, fecha FROM entradas");
 $entradas = $queryEntradas->fetch_all(MYSQLI_ASSOC);
 
-$querySalidas = $conn->query("SELECT tipo, monto, fecha, factura FROM salidas");
+$querySalidas = $conn->query("SELECT tipo, monto, fecha FROM salidas");
 $salidas = $querySalidas->fetch_all(MYSQLI_ASSOC);
 
 $totalEntradas = array_sum(array_column($entradas, 'monto'));
@@ -34,9 +34,9 @@ function escapar($valor) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balance</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,8 +55,12 @@ function escapar($valor) {
             padding: 10px 15px;
             background-color: #4CAF50;
             color: white;
-           : none;
+            border: none;
             border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
         }
         h1, h2, h3 {
             text-align: center;
@@ -98,7 +102,6 @@ function escapar($valor) {
 <body>
 <div class="container">
     <h1>Balance General</h1>
-
     <h3>Proporción Entradas vs Salidas</h3>
     <div class="chart-container" style="width: 400px; height: 400px; margin: auto;">
         <canvas id="balanceChart"></canvas>
@@ -149,17 +152,17 @@ function escapar($valor) {
             </table>
         </div>
     </div>
-
     <button id="generarPDF" class="btn">Generar PDF</button>
-    <a href="dashboard.php" class="btn">Volver al Dashboard</a>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const ctx = document.getElementById('balanceChart').getContext('2d');
         const totalEntradas = <?php echo $totalEntradas; ?>;
         const totalSalidas = <?php echo $totalSalidas; ?>;
+        const dataEntradas = <?php echo json_encode($entradas); ?>;
 
+        // Crear gráfico
+        const ctx = document.getElementById('balanceChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'pie',
             data: {
@@ -169,30 +172,34 @@ function escapar($valor) {
                     backgroundColor: ['#4CAF50', '#FF5733'],
                 }]
             },
-            options: {
-                responsive: true,
-            }
         });
 
+        // Evento para generar PDF
         document.getElementById("generarPDF").addEventListener("click", function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+
+            // Capturar gráfico como imagen
+            const chartImage = chart.toBase64Image();
 
             doc.text("Balance General", 10, 10);
             doc.text(`Total Entradas: $${totalEntradas.toFixed(2)}`, 10, 20);
             doc.text(`Total Salidas: $${totalSalidas.toFixed(2)}`, 10, 30);
             doc.text(`Balance Final: $${(totalEntradas - totalSalidas).toFixed(2)}`, 10, 40);
 
+            // Agregar tabla
             doc.autoTable({
                 startY: 50,
                 head: [['Tipo', 'Monto', 'Fecha']],
-                body: [
-                    ...<?php echo json_encode($entradas); ?>.map(entry => [entry.tipo, entry.monto, entry.fecha])
-                ]
+                body: dataEntradas.map(entry => [entry.tipo, `$${entry.monto}`, entry.fecha]),
             });
+
+            // Agregar gráfico al PDF
+            doc.addImage(chartImage, 'PNG', 10, doc.lastAutoTable.finalY + 10, 180, 100);
 
             doc.save('Balance.pdf');
         });
     });
 </script>
 </body>
+</html>
