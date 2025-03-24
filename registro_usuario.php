@@ -2,23 +2,17 @@
 session_start();
 $conn = new mysqli('localhost', 'root', '', 'finanzas_db');
 
-// Verificar si el usuario tiene sesión activa
-if (!isset($_SESSION['usuario'])) {
-    header('Location: login.php');
-    exit;
-}
-
 // Procesar el formulario de registro
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $usuario = $_POST['nombre_usuario'];
-    $contraseña = $_POST['contraseña'];
+    $usuario = $_POST['nuevo_usuario'];
+    $contraseña = $_POST['nueva_contraseña'];
 
     // Verificar si el usuario ya existe
     $verificarUsuario = "SELECT * FROM usuarios WHERE nombre_usuario = '$usuario'";
     $resultado = $conn->query($verificarUsuario);
 
     if ($resultado->num_rows > 0) {
-        $error = "El nombre de usuario ya existe. Por favor, elige otro.";
+        $errorRegistro = "El nombre de usuario ya existe. Por favor, elige otro.";
     } else {
         // Cifrar la contraseña
         $contraseña_cifrada = password_hash($contraseña, PASSWORD_BCRYPT);
@@ -26,9 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insertar el usuario en la base de datos
         $query = "INSERT INTO usuarios (nombre_usuario, contraseña) VALUES ('$usuario', '$contraseña_cifrada')";
         if ($conn->query($query)) {
-            $success = "Usuario registrado con éxito.";
+            $successRegistro = "Usuario registrado con éxito.";
         } else {
-            $error = "Error al registrar usuario: " . $conn->error;
+            $errorRegistro = "Error al registrar usuario: " . $conn->error;
         }
     }
 }
@@ -44,31 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-         <!-- Formulario de Registro -->
-         <div class="form-box">
-            <h1>Registrar Usuario</h1>
-            <form method="POST">
-                <input type="text" name="nuevo_usuario" placeholder="Nuevo Usuario" required>
-                <input type="password" name="nueva_contraseña" placeholder="Contraseña" required>
-                <button type="submit" name="registro">Registrar</button>
-                <?php if (isset($errorRegistro)): ?>
-                    <p><?php echo $errorRegistro; ?></p>
-                <?php endif; ?>
-                <?php if (isset($successRegistro)): ?>
-                    <p style="color: green;"><?php echo $successRegistro; ?></p>
-                <?php endif; ?>
-            </form>
-        </div>
+    <!-- Formulario de Registro -->
+    <div class="form-box">
+        <h1>Registrar Usuario</h1>
+        <form method="POST">
+            <input type="text" name="nuevo_usuario" placeholder="Nuevo Usuario" required>
+            <input type="password" name="nueva_contraseña" placeholder="Contraseña" required>
+            <button type="submit" name="registro">Registrar</button>
+            <?php if (isset($errorRegistro)): ?>
+                <p style="color: red;"><?php echo $errorRegistro; ?></p>
+            <?php endif; ?>
+            <?php if (isset($successRegistro)): ?>
+                <p style="color: green;"><?php echo $successRegistro; ?></p>
+                <a href="login.php" style="display: block; margin-top: 10px; text-align: center;">Iniciar sesión</a>
+            <?php endif; ?>
+        </form>
     </div>
 
-    <?php if (isset($error)): ?>
-        <p style="color: red;"><?php echo $error; ?></p>
-    <?php endif; ?>
-
-    <?php if (isset($success)): ?>
-        <p style="color: green;"><?php echo $success; ?></p>
-    <?php endif; ?>
-    <a href="dashboard.php" style="display: inline-block; margin: 10px 0; padding: 10px 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Volver al Dashboard</a>
+    <a href="login.php" style="display: inline-block; margin: 10px 0; padding: 10px 15px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Volver al Login</a>
 
 </body>
 </html>

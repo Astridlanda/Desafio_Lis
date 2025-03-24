@@ -89,6 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: red;
             text-align: center;
         }
+        .register-button {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -104,8 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <p><?php echo $errorLogin; ?></p>
                 <?php endif; ?>
             </form>
+            <a href="registro_usuario.php" class="register-button"><button>Registrarse</button></a>
         </div>
-
- 
+    </div>
 </body>
 </html>
