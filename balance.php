@@ -108,58 +108,59 @@ function escapar($valor) {
     </div>
 
     <div class="comparative-table">
-        <div>
-            <h3>Detalles de Entradas</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Monto</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($entradas as $entrada): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($entrada['tipo']); ?></td>
-                        <td>$<?php echo escapar($entrada['monto']); ?></td>
-                        <td><?php echo htmlspecialchars($entrada['fecha']); ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div>
-            <h3>Detalles de Salidas</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Monto</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($salidas as $salida): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($salida['tipo']); ?></td>
-                        <td>$<?php echo escapar($salida['monto']); ?></td>
-                        <td><?php echo htmlspecialchars($salida['fecha']); ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+    <div>
+        <h3>Detalles de Entradas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($entradas as $entrada): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($entrada['tipo']); ?></td>
+                    <td>$<?php echo escapar($entrada['monto']); ?></td>
+                    <td><?php echo htmlspecialchars($entrada['fecha']); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-    <button id="generarPDF" class="btn">Generar PDF</button>
+
+    <div>
+        <h3>Detalles de Salidas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($salidas as $salida): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($salida['tipo']); ?></td>
+                    <td>$<?php echo escapar($salida['monto']); ?></td>
+                    <td><?php echo htmlspecialchars($salida['fecha']); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<button id="generarPDF" class="btn">Generar PDF</button>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         const totalEntradas = <?php echo $totalEntradas; ?>;
         const totalSalidas = <?php echo $totalSalidas; ?>;
         const dataEntradas = <?php echo json_encode($entradas); ?>;
+        const dataSalidas = <?php echo json_encode($salidas); ?>;
 
         // Crear gráfico
         const ctx = document.getElementById('balanceChart').getContext('2d');
@@ -175,31 +176,41 @@ function escapar($valor) {
         });
 
         // Evento para generar PDF
-        document.getElementById("generarPDF").addEventListener("click", function() {
+        document.getElementById("generarPDF").addEventListener("click", function () {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
             // Capturar gráfico como imagen
             const chartImage = chart.toBase64Image();
 
-            doc.text("Balance General", 10, 10);
-            doc.text(`Total Entradas: $${totalEntradas.toFixed(2)}`, 10, 20);
-            doc.text(`Total Salidas: $${totalSalidas.toFixed(2)}`, 10, 30);
-            doc.text(`Balance Final: $${(totalEntradas - totalSalidas).toFixed(2)}`, 10, 40);
+            // Agregar encabezado
+            doc.text('Balance General', 10, 10);
 
-            // Agregar tabla
+            // Tabla de Entradas
+            doc.text('Entradas', 10, 20);
             doc.autoTable({
-                startY: 50,
+                startY: 30,
                 head: [['Tipo', 'Monto', 'Fecha']],
                 body: dataEntradas.map(entry => [entry.tipo, `$${entry.monto}`, entry.fecha]),
             });
 
-            // Agregar gráfico al PDF
-            doc.addImage(chartImage, 'PNG', 10, doc.lastAutoTable.finalY + 10, 180, 100);
+            // Tabla de Salidas
+            doc.text('Salidas', 10, doc.lastAutoTable.finalY + 10);
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 20,
+                head: [['Tipo', 'Monto', 'Fecha']],
+                body: dataSalidas.map(exit => [exit.tipo, `$${exit.monto}`, exit.fecha]),
+            });
+
+            // Agregar gráfico al PDF con dimensiones ajustadas
+            const imageWidth = 150; // Tamaño proporcional
+            const imageHeight = 90; // Tamaño proporcional
+            doc.addImage(chartImage, 'PNG', 30, doc.lastAutoTable.finalY + 20, imageWidth, imageHeight);
 
             doc.save('Balance.pdf');
         });
     });
 </script>
+
 </body>
 </html>
